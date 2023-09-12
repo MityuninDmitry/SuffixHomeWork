@@ -12,9 +12,20 @@ class ViewModel: ObservableObject {
     @Published var dict: [String: Int] = .init()
     @Published var topDict: [String: Int] = .init()
     
+    
     func createArray() {
         suffixArray = .init() // обнуляем
         
+        var tmpSuffixArray: [String] = .init()
+        for (index, value) in text.enumerated() {
+            tmpSuffixArray.append(String(text.suffix(index)))
+        }
+        
+        for suffix in tmpSuffixArray {
+            if suffix.count >= 3 {
+                suffixArray.append(suffix)
+            }
+        }
 //        let substr = String(text.suffix(3))
 //        print(substr)
 //        if substr.count == 3 {
@@ -22,21 +33,21 @@ class ViewModel: ObservableObject {
 //        }
 //
         
-        let characters = Array(text.lowercased())
-        if characters.count < 3 {
-            return
-
-        }
-
-        for (index, _) in characters.enumerated() {
-            if index <= characters.count - 3 {
-                let tmpArray = Array(arrayLiteral: [characters[index] , characters[index + 1] , characters[index + 2]])
-                let str = tmpArray.reduce ("", +)
-                suffixArray.append(str)
-            } else {
-                break
-            }
-        }
+//        let characters = Array(text.lowercased())
+//        if characters.count < 3 {
+//            return
+//
+//        }
+//
+//        for (index, _) in characters.enumerated() {
+//            if index <= characters.count - 3 {
+//                let tmpArray = Array(arrayLiteral: [characters[index] , characters[index + 1] , characters[index + 2]])
+//                let str = tmpArray.reduce ("", +)
+//                suffixArray.append(str)
+//            } else {
+//                break
+//            }
+//        }
         
         setDict()
     }
