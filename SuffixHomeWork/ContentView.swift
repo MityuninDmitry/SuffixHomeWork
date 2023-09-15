@@ -9,13 +9,13 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: ViewModel
-    @State var asc: Bool = true
+    @State var asc: Bool = true // сортировка 
     @State var mode = 0
     var body: some View {
         VStack {
             TextField("Enter some text", text: $viewModel.text)
                 .textInputAutocapitalization(.never)
-
+            
             Picker("MODE", selection: $mode) {
                 Text("ALL suffixes").tag(0)
                 Text("TOP suffixes").tag(1)
@@ -58,12 +58,12 @@ struct ContentView: View {
                 Text("def")
             }
             
+            
             Spacer()
-            Button {
-                viewModel.createArray()
-            } label: {
-                Text("Create suffix array")
-            }
+            Text("Search suffix")
+            TextField("Search sfuffix", text: $viewModel.suffixForSearch)
+                .textInputAutocapitalization(.never)
+                
         }
         .padding()
     }

@@ -6,79 +6,79 @@
 //
 
 import Foundation
+import Combine
+
 class ViewModel: ObservableObject {
-    @Published var text: String = ""
-    @Published var suffixArray: [String] = .init()
-    @Published var dict: [String: Int] = .init()
-    @Published var topDict: [String: Int] = .init()
+    @Published var text: String = "" {
+        didSet {
+            createArray()
+        }
+    }
+    @Published var suffixArray: [String] = .init() // массив суффиксов
+    @Published var dict: [String: Int] = .init() // словарь [суффикс: количество вхождений]
+    @Published var topDict: [String: Int] = .init() // словарь топ 10 [суффикс: количество вхождений]
     
+    @Published var suffixForSearch: String = "" // строка для фильтрации суффиксов
+    @Published var filteredSuffixArray: [String] = .init() // отфильтрованный массив суффиксов
+    private var cancellableSet = Set<AnyCancellable>()
     
+    /// создание массива суффиксов на основании введенного текста и заполнение словарей
     func createArray() {
         suffixArray = .init() // обнуляем
         
-        var tmpSuffixArray: [String] = .init()
-        for (index, value) in text.enumerated() {
-            tmpSuffixArray.append(String(text.suffix(index)))
+        let suffixSequense = SuffixSequence(text: text)
+        for suffix in suffixSequense {
+            suffixArray.append(suffix)
         }
         
-        for suffix in tmpSuffixArray {
-            if suffix.count >= 3 {
-                suffixArray.append(suffix)
-            }
-        }
-//        let substr = String(text.suffix(3))
-//        print(substr)
-//        if substr.count == 3 {
-//            suffixArray.append(substr)
-//        }
-//
-        
-//        let characters = Array(text.lowercased())
-//        if characters.count < 3 {
-//            return
-//
-//        }
-//
-//        for (index, _) in characters.enumerated() {
-//            if index <= characters.count - 3 {
-//                let tmpArray = Array(arrayLiteral: [characters[index] , characters[index + 1] , characters[index + 2]])
-//                let str = tmpArray.reduce ("", +)
-//                suffixArray.append(str)
-//            } else {
-//                break
-//            }
-//        }
-        
-        setDict()
+        setDict(with: suffixArray)
     }
-    
-    func setDict() {
-        dict = .init()
+   
+    /// заполняем словарь и вызываем заполнение топ 10 суффиксов
+    func setDict(with array: [String]) {
+        dict = .init() // обнуляем словарь
         
-        for str in suffixArray {
-            if dict[str] == nil {
-                dict[str] = 1
-            } else {
-                dict[str] = dict[str]! + 1
+        // заполняем словарь суффиксов с количеством вхожнений суффиксов в строке
+        for str in array {
+            var count = 0
+            for str2 in array {
+                if str2.contains(str) {
+                    count += 1
+                }
+                
             }
+            dict[str] = count
         }
         
-        setTopDict()
-    }
-    
-    func setTopDict() {
+        // заполняем словарь топ 10
         topDict = .init()
-        
         var array = Array(dict.keys.sorted(by: { dict[$0]! > dict[$1]! }).prefix(10))
-        
         for key in array {
             topDict[key] = dict[key]
         }
-        
-       
-        
     }
     
     init() {
+        $suffixForSearch
+            .removeDuplicates()
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
+            .map { value in
+                var filteredArray: [String] = .init()
+                for suffix in self.suffixArray {
+                    if suffix.contains(value) {
+                        filteredArray.append(suffix)
+                    }
+                }
+                
+                if filteredArray.isEmpty { 
+                    self.setDict(with: self.suffixArray)
+                } else {
+                    self.setDict(with: filteredArray)
+                }
+                return filteredArray
+            }
+            .assign(to: \.filteredSuffixArray, on: self)
+            .store(in: &cancellableSet)
+        
     }
 }
